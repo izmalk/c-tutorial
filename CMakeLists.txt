@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
-project(HelloWorld)
-
-add_executable(hello_world main.c)
+project (Tutorial C)
+link_directories(./lib)
+include_directories(./include)
+add_executable(tutorial tutorial.c)
+IF (WIN32)
+    target_link_libraries(tutorial typedb_driver_clib.dll.lib)
+ELSE()
+    target_link_libraries(tutorial typedb_driver_clib)
+ENDIF()

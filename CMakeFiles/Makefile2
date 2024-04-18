@@ -63,7 +63,7 @@ CMAKE_BINARY_DIR = /Users/vladimir/Documents/GitHub/c-tutorial
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/hello_world.dir/all
+all: CMakeFiles/tutorial.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -71,34 +71,34 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/hello_world.dir/clean
+clean: CMakeFiles/tutorial.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/hello_world.dir
+# Target rules for target CMakeFiles/tutorial.dir
 
 # All Build rule for target.
-CMakeFiles/hello_world.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/vladimir/Documents/GitHub/c-tutorial/CMakeFiles --progress-num=1,2 "Built target hello_world"
-.PHONY : CMakeFiles/hello_world.dir/all
+CMakeFiles/tutorial.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tutorial.dir/build.make CMakeFiles/tutorial.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tutorial.dir/build.make CMakeFiles/tutorial.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/vladimir/Documents/GitHub/c-tutorial/CMakeFiles --progress-num=1,2 "Built target tutorial"
+.PHONY : CMakeFiles/tutorial.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/hello_world.dir/rule: cmake_check_build_system
+CMakeFiles/tutorial.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/vladimir/Documents/GitHub/c-tutorial/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/hello_world.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/tutorial.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/vladimir/Documents/GitHub/c-tutorial/CMakeFiles 0
-.PHONY : CMakeFiles/hello_world.dir/rule
+.PHONY : CMakeFiles/tutorial.dir/rule
 
 # Convenience name for target.
-hello_world: CMakeFiles/hello_world.dir/rule
-.PHONY : hello_world
+tutorial: CMakeFiles/tutorial.dir/rule
+.PHONY : tutorial
 
 # clean rule for target.
-CMakeFiles/hello_world.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/clean
-.PHONY : CMakeFiles/hello_world.dir/clean
+CMakeFiles/tutorial.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tutorial.dir/build.make CMakeFiles/tutorial.dir/clean
+.PHONY : CMakeFiles/tutorial.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

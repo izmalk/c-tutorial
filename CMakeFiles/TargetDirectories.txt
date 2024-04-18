@@ -1,3 +1,3 @@
-/Users/vladimir/Documents/GitHub/c-tutorial/CMakeFiles/hello_world.dir
+/Users/vladimir/Documents/GitHub/c-tutorial/CMakeFiles/tutorial.dir
 /Users/vladimir/Documents/GitHub/c-tutorial/CMakeFiles/edit_cache.dir
 /Users/vladimir/Documents/GitHub/c-tutorial/CMakeFiles/rebuild_cache.dir
