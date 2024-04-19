@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/vladimir/Documents/GitHub/c-tutorial/build",
+  "command": "/usr/local/bin/gcc-13  -I/Users/vladimir/Documents/GitHub/c-tutorial/./include -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.3 -o CMakeFiles/tutorial.dir/tutorial.c.o -c /Users/vladimir/Documents/GitHub/c-tutorial/tutorial.c",
+  "file": "/Users/vladimir/Documents/GitHub/c-tutorial/tutorial.c",
+  "output": "CMakeFiles/tutorial.dir/tutorial.c.o"
+}
+]
