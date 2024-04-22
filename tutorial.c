@@ -547,15 +547,23 @@ int main() {
     Connection* connection = NULL;
     DatabaseManager* databaseManager = NULL;
     connection = connectToTypeDB(TYPEDB_EDITION, SERVER_ADDR);
-    if (!connection) handle_error("Failed to connect to TypeDB.");
-    if (FAILED()) goto cleanup;
+    if (!connection || FAILED()) {
+        handle_error("Failed to connect to TypeDB.");
+        goto cleanup;
+    }
     databaseManager = database_manager_new(connection);
-    if (!databaseManager) handle_error("Failed to get database manager.");
-    if (FAILED()) goto cleanup;
-    
-    if (!dbSetup(databaseManager, DB_NAME, false)) handle_error("Failed to set up the database.");
-    if (!queries(databaseManager, DB_NAME)) handle_error("Failed to query the database.");
-
+    if (!databaseManager || FAILED()) {
+        handle_error("Failed to get database manager.");
+        goto cleanup;
+    }
+    if (!dbSetup(databaseManager, DB_NAME, false)) {
+        handle_error("Failed to set up the database.");
+        goto cleanup;
+    }
+    if (!queries(databaseManager, DB_NAME)) {
+        handle_error("Failed to query the database.");
+        goto cleanup;
+    }
     result = EXIT_SUCCESS;
 cleanup:
     database_manager_drop(databaseManager);
