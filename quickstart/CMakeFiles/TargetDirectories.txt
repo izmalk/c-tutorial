@@ -1,0 +1,3 @@
+/Users/vladimir/Documents/GitHub/c-tutorial/quickstart/CMakeFiles/quickstart.dir
+/Users/vladimir/Documents/GitHub/c-tutorial/quickstart/CMakeFiles/edit_cache.dir
+/Users/vladimir/Documents/GitHub/c-tutorial/quickstart/CMakeFiles/rebuild_cache.dir
