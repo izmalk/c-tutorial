@@ -47,7 +47,7 @@ void dbSchemaSetup(Session* schemaSession, const char* schemaFile) {
     fclose(file);
 
     tx = transaction_new(schemaSession, Write, opts);
-    if (FAILED()) {
+    if (tx == NULL || FAILED()) {
         handle_error("Transaction failed to start.");
         goto cleanup;
     }
@@ -81,7 +81,7 @@ void dbDatasetSetup(Session* dataSession, const char* dataFile) {
     fclose(file);
     
     tx = transaction_new(dataSession, Write, opts);
-    if (FAILED()) {
+    if (tx == NULL || FAILED()) {
         handle_error("Transaction failed to start.");
         goto cleanup;
     }
@@ -116,9 +116,15 @@ bool createDatabase(DatabaseManager* dbManager, const char* dbName) {
         goto cleanup;
     }
     schemaSession = session_new(dbManager, dbName, Schema, opts);
+    if (schemaSession == NULL || FAILED()) {
+        goto cleanup;
+    }
     dbSchemaSetup(schemaSession, "iam-schema.tql");
     session_close(schemaSession);
     dataSession = session_new(dbManager, dbName, Data, opts);
+    if (dataSession == NULL || FAILED()) {
+        goto cleanup;
+    }
     dbDatasetSetup(dataSession, "iam-data-single-query.tql");
     session_close(dataSession);
     result = true;
@@ -137,7 +143,7 @@ void delete_database_if_exists(DatabaseManager* databaseManager, const char* nam
 
 bool replaceDatabase(DatabaseManager* dbManager, const char* dbName) {
     printf("Deleting an existing database...");
-    delete_database_if_exists(dbManager, dbName); // Delete the database if it exists already
+    delete_database_if_exists(dbManager, dbName);
     if (FAILED()) {
         printf("Failed to delete the database. Terminating...\n");
         exit(EXIT_FAILURE);
@@ -155,14 +161,13 @@ bool replaceDatabase(DatabaseManager* dbManager, const char* dbName) {
 bool dbCheck(Session* dataSession) {
     printf("Testing the database...");
     bool result = false;
+    Transaction* tx = NULL;
     Options* opts = options_new();
-
-    Transaction* tx = transaction_new(dataSession, Read, opts);
-    if (FAILED()) {
+    tx = transaction_new(dataSession, Read, opts);
+    if (tx == NULL || FAILED()) {
         handle_error("Transaction failed to start.");
         goto cleanup;
     }
-
     const char* testQuery = "match $u isa user; get $u; count;";
     Concept* response = concept_promise_resolve(query_get_aggregate(tx, testQuery, opts));
     if (response == NULL || FAILED()) {
@@ -180,6 +185,7 @@ bool dbCheck(Session* dataSession) {
         result = true;
     } else {
         printf("Failed with the result: %ld\nExpected result: 3.\n", answer);
+        exit(EXIT_FAILURE);
     }
 cleanup:
     concept_drop(response);
@@ -240,13 +246,14 @@ bool dbSetup(DatabaseManager* dbManager, const char* dbName, bool dbReset) {
 // tag::fetch[]
 int fetchAllUsers(DatabaseManager* dbManager, const char* dbName) {
     Options* opts = options_new();
+    Transaction* tx = NULL;
+    StringIterator* queryResult = NULL;
     Session* session = session_new(dbManager, dbName, Data, opts);
     if (session == NULL || FAILED()) {
         fprintf(stderr, "Failed to open session.\n");
         exit(EXIT_FAILURE);
     }
-
-    Transaction* tx = transaction_new(session, Read, opts);
+    tx = transaction_new(session, Read, opts);
     if (tx == NULL || FAILED()) {
         fprintf(stderr, "Failed to start transaction.\n");
         session_close(session);
@@ -254,7 +261,7 @@ int fetchAllUsers(DatabaseManager* dbManager, const char* dbName) {
     }
 
     const char* query = "match $u isa user; fetch $u: full-name, email;";
-    StringIterator* queryResult = query_fetch(tx, query, opts);
+    queryResult = query_fetch(tx, query, opts);
     if (queryResult == NULL || FAILED()) {
         fprintf(stderr, "Query failed or no results.\n");
         transaction_close(tx);
@@ -266,7 +273,7 @@ int fetchAllUsers(DatabaseManager* dbManager, const char* dbName) {
     int counter = 1;
     while (userJSON != NULL) {
         printf("User #%d: ", counter++);
-        printf("%s",userJSON);
+        printf("%s \n",userJSON);
         userJSON = string_iterator_next(queryResult);
     }
 cleanup:
@@ -279,13 +286,18 @@ cleanup:
 // tag::insert[]
 int insertNewUser(DatabaseManager* dbManager, const char* dbName, const char* name, const char* email) {
     Options* opts = options_new();
-    Session* session = session_new(dbManager, dbName, Data, opts);
+    Transaction* tx = NULL;
+    Session* session = NULL;
+    ConceptMapIterator* response = NULL;
+    ConceptMap* conceptMap = NULL;
+
+    session = session_new(dbManager, dbName, Data, opts);
     if (session == NULL || FAILED()) {
         fprintf(stderr, "Failed to open session.\n");
         exit(EXIT_FAILURE);
     }
 
-    Transaction* tx = transaction_new(session, Write, opts);
+    tx = transaction_new(session, Write, opts);
     if (tx == NULL || FAILED()) {
         fprintf(stderr, "Failed to start transaction.\n");
         session_close(session);
@@ -294,7 +306,7 @@ int insertNewUser(DatabaseManager* dbManager, const char* dbName, const char* na
 
     char query[512];
     snprintf(query, sizeof(query), "insert $p isa person, has full-name $fn, has email $e; $fn == '%s'; $e == '%s';", name, email);
-    ConceptMapIterator* response = query_insert(tx, query, opts);
+    response = query_insert(tx, query, opts);
     if (response == NULL || FAILED()) {
         fprintf(stderr, "Failed to execute insert query.\n");
         transaction_close(tx);
@@ -302,7 +314,6 @@ int insertNewUser(DatabaseManager* dbManager, const char* dbName, const char* na
         exit(EXIT_FAILURE);
     }
 
-    ConceptMap* conceptMap;
     int insertedCount = 0;
     while ((conceptMap = concept_map_iterator_next(response)) != NULL) {
         Concept* fnConcept = concept_map_get(conceptMap, "fn");
@@ -323,14 +334,14 @@ int insertNewUser(DatabaseManager* dbManager, const char* dbName, const char* na
 // end::insert[]
 // tag::get[]
 int getFilesByUser(DatabaseManager* dbManager, const char* dbName, const char* name, bool inference) {
+    Transaction* tx = NULL;
+    Session* session = NULL;
+    ConceptMapIterator* userResult = NULL;
+    ConceptMapIterator* response = NULL;
+    ConceptMap* cm = NULL;
     Options* opts = options_new();
-    if (FAILED()) {
-        fprintf(stderr, "Failed to set options.\n");
-        options_drop(opts);
-        exit(EXIT_FAILURE);
-    }
 
-    Session* session = session_new(dbManager, dbName, Data, opts);
+    session = session_new(dbManager, dbName, Data, opts);
     if (session == NULL || FAILED()) {
         fprintf(stderr, "Failed to open session.\n");
         options_drop(opts);
@@ -338,7 +349,7 @@ int getFilesByUser(DatabaseManager* dbManager, const char* dbName, const char* n
     }
 
     options_set_infer(opts, inference);
-    Transaction* tx = transaction_new(session, Read, opts);
+    tx = transaction_new(session, Read, opts);
     if (tx == NULL || FAILED()) {
         fprintf(stderr, "Failed to start transaction.\n");
         options_drop(opts);
@@ -348,7 +359,7 @@ int getFilesByUser(DatabaseManager* dbManager, const char* dbName, const char* n
 
     char query[512];
     snprintf(query, sizeof(query), "match $u isa user, has full-name '%s'; get;", name);
-    ConceptMapIterator* userResult = query_get(tx, query, options_new());
+    userResult = query_get(tx, query, options_new());
     int userCount = 0;
     while (concept_map_iterator_next(userResult) != NULL) { userCount++; }
     concept_map_iterator_drop(userResult);
@@ -357,8 +368,7 @@ int getFilesByUser(DatabaseManager* dbManager, const char* dbName, const char* n
         fprintf(stderr, "Error: Found more than one user with that name.\n");
     } else if (userCount == 1) {
         snprintf(query, sizeof(query), "match $fn == '%s'; $u isa user, has full-name $fn; $p($u, $pa) isa permission; $o isa object, has path $fp; $pa($o, $va) isa access;$va isa action, has name 'view_file'; get $fp; sort $fp asc;", name);
-        ConceptMapIterator* response = query_get(tx, query, options_new());
-        ConceptMap* cm;
+        response = query_get(tx, query, options_new());
         int fileCount = 0;
         while ((cm = concept_map_iterator_next(response)) != NULL) {
             Concept* filePathConcept = concept_map_get(cm, "fp");
@@ -383,14 +393,17 @@ int getFilesByUser(DatabaseManager* dbManager, const char* dbName, const char* n
 // end::get[]
 // tag::update[]
 int16_t updateFilePath(DatabaseManager* dbManager, const char* dbName, const char* oldPath, const char* newPath) {
+    Transaction* tx = NULL;
+    Session* session = NULL;
     Options* opts = options_new();
-    Session* session = session_new(dbManager, dbName, Data, opts);
+    ConceptMapIterator* response = NULL;
+    session = session_new(dbManager, dbName, Data, opts);
     if (session == NULL || FAILED()) {
         fprintf(stderr, "Failed to open session.\n");
         exit(EXIT_FAILURE);
     }
 
-    Transaction* tx = transaction_new(session, Write, opts);
+    tx = transaction_new(session, Write, opts);
     if (tx == NULL || FAILED()) {
         fprintf(stderr, "Failed to start transaction.\n");
         session_close(session);
@@ -400,7 +413,7 @@ int16_t updateFilePath(DatabaseManager* dbManager, const char* dbName, const cha
     char query[512];
     snprintf(query, sizeof(query), "match $f isa file, has path $old_path; $old_path = '%s'; delete $f has $old_path; insert $f has path $new_path; $new_path = '%s';", oldPath, newPath);
 
-    ConceptMapIterator* response = query_update(tx, query, opts);
+    response = query_update(tx, query, opts);
     if (response == NULL || FAILED()) {
         fprintf(stderr, "Query failed or no results.\n");
         transaction_close(tx);
@@ -428,14 +441,18 @@ int16_t updateFilePath(DatabaseManager* dbManager, const char* dbName, const cha
 // tag::delete[]
 bool deleteFile(DatabaseManager* dbManager, const char* dbName, const char* path) {
     bool result = false;
+    Transaction* tx = NULL;
+    Session* session = NULL;
     Options* opts = options_new();
-    Session* session = session_new(dbManager, dbName, Data, opts);
+    ConceptMapIterator* response = NULL;
+
+    session = session_new(dbManager, dbName, Data, opts);
     if (session == NULL || FAILED()) {
         fprintf(stderr, "Failed to open session.\n");
         exit(EXIT_FAILURE);
     }
 
-    Transaction* tx = transaction_new(session, Write, opts);
+    tx = transaction_new(session, Write, opts);
     if (tx == NULL || FAILED()) {
         fprintf(stderr, "Failed to start transaction.\n");
         session_close(session);
@@ -444,7 +461,7 @@ bool deleteFile(DatabaseManager* dbManager, const char* dbName, const char* path
 
     char query[256];
     snprintf(query, sizeof(query), "match $f isa file, has path '%s'; get;", path);
-    ConceptMapIterator* response = query_get(tx, query, opts);
+    response = query_get(tx, query, opts);
     if (response == NULL || FAILED()) {
         fprintf(stderr, "Query failed or no results.\n");
         transaction_close(tx);
