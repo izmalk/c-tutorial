@@ -558,16 +558,15 @@ int main() {
     }
     if (!dbSetup(databaseManager, DB_NAME, false)) {
         handle_error("Failed to set up the database.");
-        database_manager_drop(databaseManager);
         goto cleanup;
     }
     if (!queries(databaseManager, DB_NAME)) {
         handle_error("Failed to query the database.");
-        database_manager_drop(databaseManager);
         goto cleanup;
     }
     result = EXIT_SUCCESS;
 cleanup:
+    database_manager_drop(databaseManager);
     connection_close(connection);
     exit(result);
 }
