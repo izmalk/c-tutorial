@@ -1,10 +1,8 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "../include/typedb_driver.h"
 
 #define SERVER_ADDR "127.0.0.1:1729"
-#define DB_NAME "quickstart_db"
+#define DB_NAME "access-management-db"
 
 #define FAILED() check_error_may_print(__FILE__, __LINE__)
 
@@ -33,11 +31,10 @@ void delete_database_if_exists(DatabaseManager* databaseManager, const char* nam
     }
 }
 
-bool createDatabase(DatabaseManager* dbManager, const char* dbName) {
+void createDatabase(DatabaseManager* dbManager, const char* dbName) {
     Session* session = NULL;
     Transaction* tx = NULL;
     Options* opts = options_new();
-    bool result = false;
     ConceptMapIterator* response1 = NULL;
     ConceptMapIterator* response2 = NULL;
     delete_database_if_exists(dbManager, dbName);
@@ -103,20 +100,17 @@ bool createDatabase(DatabaseManager* dbManager, const char* dbName) {
         goto cleanup;
     }
     printf("Data setup complete.\n");
-    result = true;
 cleanup:
     concept_map_iterator_drop(response1);
     concept_map_iterator_drop(response2);
     session_close(session);
     options_drop(opts);
-    return result;
 }
 
-bool query(DatabaseManager* dbManager, const char* dbName) {
+void query(DatabaseManager* dbManager, const char* dbName) {
     Session* dataSession = NULL;
     Transaction* tx = NULL;
     Options* opts = options_new();
-    bool result = false;
     StringIterator* queryResult = NULL;
 
     dataSession = session_new(dbManager, dbName, Data, opts);
@@ -144,13 +138,11 @@ bool query(DatabaseManager* dbManager, const char* dbName) {
     }
 
     printf("Test complete.\n");
-    result = true;
 cleanup:
     string_iterator_drop(queryResult);
     transaction_close(tx);
     session_close(dataSession);
     options_drop(opts);
-    return result;
 }
 
 int main() {
